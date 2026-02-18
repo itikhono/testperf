@@ -16,7 +16,7 @@ class Model(Model):
       raise Exception(f'Model file {self.model_path} not found')
     self.model = YOLO(self.model_path)
     self.model.to(self.device)
-    self.model.model = self.model.model.half()
+    self.model.model = self.model.model.fuse().half()
   def prepare(self):
     # Create random input tensor (B, C, H, W)
     self.input_data = torch.randn(
