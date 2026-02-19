@@ -379,7 +379,7 @@ if inference_times:
     wb.save(workbook_path)
     os.rename(workbook_path, os.path.join(reports_path, workbook_path))
     
-    print(f'{{ "Workbook": "{os.path.join(reports_path, workbook_path)}" }},')
+    print(f'{{ "Workbook": "{os.path.join(reports_path, workbook_path).replace('\\', '/')}" }},')
     
   except Exception as e:
     print(f'{{ "Error": "Failed to generate report {e}" }},')

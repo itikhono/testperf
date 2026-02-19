@@ -56,7 +56,13 @@ def spent(category):
   spent_time = mul_time[-1] - mul_time[0]
   print(f'{{ "{category}" : "{spent_time}" }},')
 
-model = test_model.Model()
+model = None
+try:
+  model = test_model.Model()
+except Exception as e:
+  print(f'{{ "Error": "Failed to create model {e}" }},')
+  exit(2)
+
 if '--runs' in sys.argv:
   try:
     model.total_inference_runs = int(sys.argv[sys.argv.index('--runs') + 1])
@@ -102,7 +108,7 @@ for item in range(1, len(mul_time) - 1):
 last = mul_time[0]
 max_time = mul_time[1] - last
 min_time = mul_time[1] - last
-for item in mul_time[1:]:
+for item in mul_time[1:-1]:
   spent_time = item - last
   last = item
   max_time = max(spent_time, max_time)
@@ -113,12 +119,14 @@ avg_time = (mul_time[-1] - mul_time[0]) / (len(mul_time) - 1)
 print('{ "Read Times": [')
 for item in read_times[:-1]:
   print(f'{{ "Time" : "{item}" }},')
-print(']},')
+print(f'{{ "Time" : "{read_times[-1]}" }}')
+print('] },')
 
-print(f'"Read Minimum" : "{min_time}",')
-print(f'"Read Maximum" : "{max_time}",')
-print(f'"Read Average" : "{avg_time}"')
-print('},')
+print('{ "Read Summary": {')
+print(f'"Minimum" : "{min_time}",')
+print(f'"Maximum" : "{max_time}",')
+print(f'"Average" : "{avg_time}"')
+print('} },')
 
 read_times.append({"Minimum": min_time, "Maximum": max_time, "Average": avg_time})
 
@@ -159,7 +167,7 @@ for batch in batches:
   last = mul_time[0]
   max_time = mul_time[1] - last
   min_time = mul_time[1] - last
-  for item in mul_time[1:]:
+  for item in mul_time[1:-1]:
     spent_time = item - last
     last = item
     max_time = max(spent_time, max_time)
@@ -169,16 +177,17 @@ for batch in batches:
   print('{ "Inference Times": [')
   for item in inference_times[batch][:-1]:
     print(f'{{ "Time" : "{item}" }},')
+  print(f'{{ "Time" : "{inference_times[batch][-1]}" }}')
   print('] },')
 
   inference_times[batch].append({"Minimum": min_time, "Maximum": max_time, "Average": avg_time})
 
-  print('{')
+  print('{ "Inference Summary": {')
   print(f'"Batch Size" : "{batch}",')
   print(f'"Minimum" : "{min_time}",')
   print(f'"Maximum" : "{max_time}",')
   print(f'"Average" : "{avg_time}"')
-  print('},')
+  print('} },')
 
 checkpoint()
 model.shutdown()

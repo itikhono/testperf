@@ -319,10 +319,10 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
         print(f'{{ "Error": "Failed to copy !StatViewer.xlsm {e}" }}')
     os.rename(workbook_path, os.path.join(reports_path, workbook_path))
 
-    print(f"{{ \"Workbook\": \"{os.path.join(reports_path, workbook_path)}\" }}")
+    print(f"{{ \"Workbook\": \"{os.path.join(reports_path, workbook_path).replace('\\', '/')}\" }},")
 
   except Exception as e:
-    print(f'{{ "Error": "Failed to load openpyxl {e}" }}')
+    print(f'{{ "Error": "Failed to load openpyxl {e}" }},')
   return workbook_path
 
 def _run(cmd, timeout=5):
