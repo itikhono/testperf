@@ -62,8 +62,8 @@ class TestModelBatchSize:
             f'Expected line like \'{{ "Total Inference {x}" : "<float>" }},\' in output'
         )
         # '"Batch Size" : "X",'
-        assert f'"Batch Size" : "{x}",' in out, (
-            f'Expected \'"Batch Size" : "{x}",\' in output'
+        assert f'"Batch Size" : {x},' in out, (
+            f'Expected \'"Batch Size" : {x},\' in output'
         )
 
     @pytest.mark.parametrize("batch_sizes", [[1],

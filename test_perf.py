@@ -183,7 +183,7 @@ for batch in batches:
   inference_times[batch].append({"Minimum": min_time, "Maximum": max_time, "Average": avg_time})
 
   print('{ "Inference Summary": {')
-  print(f'"Batch Size" : "{batch}",')
+  print(f'"Batch Size" : {batch},')
   print(f'"Minimum" : "{min_time}",')
   print(f'"Maximum" : "{max_time}",')
   print(f'"Average" : "{avg_time}"')
