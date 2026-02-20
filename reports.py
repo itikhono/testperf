@@ -31,6 +31,8 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
     read_sheet.append(["Minimum"])
     read_sheet.append(["Maximum"])
 
+    read_sheet.append(["Run", "Time (s)"])
+
     col_letter = get_column_letter(offset_col)
     offset_row = read_sheet.max_row + 1
     last_row = offset_row + len(read_times) - 2
@@ -41,8 +43,6 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
     read_sheet[col_letter + str(offset_stat_row + 4)] = "=_xlfn.PERCENTILE.INC(" + col_letter + str(offset_row) + ":" + col_letter + str(last_row) + ", 0.99)"
     read_sheet[col_letter + str(offset_stat_row + 5)] = "=MIN(" + col_letter + str(offset_row) + ":" + col_letter + str(last_row) + ")"
     read_sheet[col_letter + str(offset_stat_row + 6)] = "=MAX(" + col_letter + str(offset_row) + ":" + col_letter + str(last_row) + ")"
-
-    read_sheet.append(["Run", "Time (s)"])
 
     offset_col = 2
     offset_row = read_sheet.max_row + 1
@@ -114,7 +114,7 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
 
     offset_col = 2
     offset_row = inference_sheet.max_row + 1
-    last_row = offset_row + len(inference_table[0]) - 2
+    last_row = offset_row + len(inference_table[0]) - 1
 
     for batch_index in range(len(batches)):
         col_letter = get_column_letter(offset_col + batch_index)
@@ -217,7 +217,7 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
     main_sheet.add_chart(deepcopy(chart), "P20")
 
     idx = 0
-    for idx in range(1, len(inference_table[0])):
+    for idx in range(1, len(inference_table[0]) + 1):
         row = [idx]
         for batch_index in range(len(batches)):
             row.append(inference_table[batch_index][idx - 1] if len(inference_table[batch_index]) > idx - 1 else None)
