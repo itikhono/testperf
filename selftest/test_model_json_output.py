@@ -25,8 +25,22 @@ class TestModelJsonOutput:
         )
         return result.stdout, result.stderr, result.returncode
 
-    def test_capture_output_and_read_as_json(self):
+    def test_default_batch_size_as_json(self):
         """Capture test_perf.py selftest.models.const_time_model output and read it as JSON."""
         stdout, stderr, code = self.run_subprocess([self.const_time_model, '--delay_all', '0.01'])
+        assert code == 0, stdout + stderr
+        get_combined_output(stdout, stderr) # should not raise an exception
+
+    @pytest.mark.parametrize("batch_size", [[1], [1, 2, 4, 8]])
+    def test_custom_batch_size_as_json(self, batch_size):
+        """Capture test_perf.py selftest.models.const_time_model output and read it as JSON."""
+        stdout, stderr, code = self.run_subprocess([self.const_time_model, '--batch-size', ','.join([str(b) for b in batch_size]), '--delay_all', '0.01'])
+        assert code == 0, stdout + stderr
+        get_combined_output(stdout, stderr) # should not raise an exception
+
+    @pytest.mark.parametrize("batch_size", [[1], [1, 2, 4, 8]])
+    def test_only_prepare_as_json(self, batch_size):
+        """Capture test_perf.py selftest.models.const_time_model output and read it as JSON."""
+        stdout, stderr, code = self.run_subprocess([self.const_time_model, '--batch-size', ','.join([str(b) for b in batch_size]), '--delay_all', '0.01', '--only-prepare'])
         assert code == 0, stdout + stderr
         get_combined_output(stdout, stderr) # should not raise an exception

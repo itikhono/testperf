@@ -105,7 +105,8 @@ class TestModelTimings:
                 model_1st_read = float(step["Model 1st Read"])
                 break
         assert model_1st_read is not None, f"Model 1st Read not found in output: {out}"
-        assert abs(model_1st_read - model.delays['read1st']) < self.accuracy, f"Expected model 1st read to be close to read1st delay, got {model_1st_read} and {model.delays['read1st']}, diff {diff}"
+        diff = abs(model_1st_read - model.delays['read1st'])
+        assert diff < self.accuracy, f"Expected model 1st read to be close to read1st delay, got {model_1st_read} and {model.delays['read1st']}, diff {diff}"
 
     def check_read_runs(self, out, steps, model):
         """ Looking for a "Read Runs" step and checking if it is 50. """
@@ -177,7 +178,7 @@ class TestModelTimings:
         diff = abs(float(read_summary['Average']) - sum / len(times))
         assert diff < self.accuracy, f"Expected average read time to be close to average of read times, got {read_summary['Average']} and {sum / len(times)}, diff {diff}"
 
-    def check_inference_times(self, args,out, steps, model, expected_runs):
+    def check_inference_times(self, args, out, steps, model, expected_runs):
         """ Looking for a "Inference Times" step and checking if it is close to inference delay (for const time model),
         also checking if inference summary is close to explicitly calculated values. """
         batch_size = None
@@ -244,7 +245,7 @@ class TestModelTimings:
         steps = data.get("Steps", None)
         assert steps is not None, f"Steps not found in output: {out}"
 
-        self.check_prepare_batch_timings(out, args, steps, model)
+        self.check_prepare_batch_timings(args, out, steps, model)
         self.check_model_1st_read_timings(out, steps, model)
         read_runs = self.check_read_runs(out, steps, model)
         total_read = self.check_total_read(out, steps, model, read_runs)

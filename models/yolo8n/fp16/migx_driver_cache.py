@@ -315,9 +315,9 @@ if inference_times:
     # Build overview page
     report_datetime = datetime.datetime.now()
     main_sheet.column_dimensions[get_column_letter(1)].width = 30
-    main_sheet.append(['Model:', 'yolov11l (MIGraphX)'])
+    main_sheet.append(['Model:', 'yolov8n (MIGraphX)'])
     main_sheet.merge_cells(start_row=main_sheet.max_row, start_column=2, end_row=main_sheet.max_row, end_column=10)
-    main_sheet.append(['Description:', 'YOLO11L model running on MIGraphX'])
+    main_sheet.append(['Description:', 'YOLO8N model running on MIGraphX'])
     main_sheet.merge_cells(start_row=main_sheet.max_row, start_column=2, end_row=main_sheet.max_row, end_column=10)
     main_sheet.append(['Run Command:', ' '.join(sys.argv)])
     main_sheet.merge_cells(start_row=main_sheet.max_row, start_column=2, end_row=main_sheet.max_row, end_column=10)

@@ -19,8 +19,8 @@ class Model(Model):
                     print(arg[len('--delay-'):])
                     self.delays[arg[len('--delay-'):]] = float(args[args.index(arg) + 1])
                 except Exception as e:
-                    print(f"Error parsing delay {arg}: {e}, using default {self.default_delays[arg[len('--delay-'):]]}")
-                    self.delays[arg[len('--delay-'):]] = self.default_delays[arg[len('--delay-'):]]
+                    print(f"Error parsing delay {arg}: {e}, using default 0.1")
+                    self.delays[arg[len('--delay-'):]] = 0.1
     def prepare_batch(self, batch_size):
         sleep(self.delays['prepare-batch'])
     def read1st(self):

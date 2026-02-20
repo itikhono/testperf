@@ -53,7 +53,7 @@ Container Selection:
                              Supports negative indexing (e.g., -1 for last config)
 
 Container Management:
-  --dont-remove              Keep Docker containers after execution (don't use --rm)
+  --dont-remove              Keep Docker image after execution (don't use --rm)
   --shell                    Open an interactive shell in the container
                              (must be used with --single)
 
@@ -164,9 +164,9 @@ if '--continue' in sys.argv:
         start_index = 0
 
 end_index = len(docker_configs)
-if '--last' in sys.argv:
+if '--count' in sys.argv:
     try:
-        count_idx = sys.argv.index('--last')
+        count_idx = sys.argv.index('--count')
         if count_idx + 1 < len(sys.argv):
             value = int(sys.argv[count_idx + 1]) + 1
             if value >= 0:
@@ -174,7 +174,7 @@ if '--last' in sys.argv:
             elif (end_index + -value) > 0:
                 end_index = end_index - value
     except (ValueError, IndexError) as e:
-        print(f'Error: Invalid --last argument {e}, using {end_index}')
+        print(f'Error: Invalid --count argument {e}, using {end_index}')
 
 if '--single' in sys.argv:
     try:
@@ -216,14 +216,21 @@ for i in range(start_index, end_index):
     print(f"=== Processing configuration {i} ===")
     # Check if docker image exists
     docker_image_exists = False
-    if docker_image:
+    if (not docker_image is None) and (docker_image != ''):
         check_cmd = ['docker', 'image', 'inspect', docker_image]
         print(f"  Command: {' '.join(check_cmd)}")
         result = subprocess.run(check_cmd, cwd=script_folder, capture_output=True)
         docker_image_exists = (result.returncode == 0)
+    else:
+        docker_image = 'testperf:latest'
+
+    # Image must exist or be built from file
+    if (not docker_image_exists) and (not docker_file):
+        print(f"Error: Configuration {i} must have either 'docker_image' or 'docker_file' set, exiting")
+        exit(1)
 
     # Build image if docker_image doesn't exist but docker_file does
-    if (not docker_image_exists) or (not docker_image and docker_file):
+    if (not docker_image_exists) and (not docker_file is None) and (docker_file != ''):
         if docker_file.startswith('docker pull '):
             print(f"Pulling docker image from {docker_file}...")
             build_cmd = docker_file.split()

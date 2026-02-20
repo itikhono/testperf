@@ -1,6 +1,7 @@
 import os
 
 class Model:
+  """Base class for all models"""
   def __init__(self):
     self.batch_size = 1
     self.total_inference_runs = 100

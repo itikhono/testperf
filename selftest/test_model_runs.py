@@ -26,9 +26,9 @@ class TestModelRuns:
         )
         return result.stdout, result.stderr, result.returncode
 
-    def test_empty_model_read_runs_lines_count(self):
+    def test_noisy_model_read_runs_lines_count(self):
         """
-        Run test_perf.py with selftest/models/empty_model.py (no extra params),
+        Run test_perf.py with selftest/models/noisy_model.py (no extra params),
         parse '{ "Read Runs": X }' and verify output has X lines with 'Noisy model.read()'.
         """
         stdout, stderr, code = self.run_subprocess([self.noisy_model])
@@ -55,7 +55,7 @@ class TestModelRuns:
             f"Lines: {lines_with_read}"
         )
 
-    def test_empty_model_read_times_count(self):
+    def test_noisy_model_read_times_count(self):
         """
         Run test_perf.py with selftest/models/noisy_model.py (no extra params).
         Between '{ "Read Times": [' and ']}', count lines like '{ "Time" : "1.2344343" },'
@@ -93,7 +93,7 @@ class TestModelRuns:
         (["--runs", "1"], 1),
         (["--runs", "50"], 50),
     ])
-    def test_empty_model_inference_times_count(self, runs_arg, expected_count):
+    def test_noisy_model_inference_times_count(self, runs_arg, expected_count):
         """
         Run test_perf.py with selftest/models/noisy_model.py with optional --runs Y.
         Between '{ "Inference Times": [' and '] },' count lines like

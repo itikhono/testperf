@@ -41,7 +41,7 @@ if '--batch-size' in sys.argv:
   try:
     batches = [int(x) for x in sys.argv[sys.argv.index('--batch-size') + 1].split(',')]
   except Exception as e:
-    print(f'{{ "Error": "Failed to set batch size {e}, using default [{', '.join(batches)}]" }},')
+    print(f'{{ "Error": "Failed to set batch size {e}, using default [{', '.join(str(b) for b in batches)}]" }},')
 
 mul_time = []
 def checkpoint(do_reset = True):
@@ -99,7 +99,7 @@ if first_read_time < 60:
   spent(f"Total Read")
 else:
   print(f'{{ "Error": "Read time is too long {mul_time[-1] - mul_time[0]}, skipping read tests" }},')
-  mul_time.append(0) # Fake time to avoid index error
+  mul_time.append(mul_time[-1]) # Fake time to avoid index error
 
 read_times = []
 for item in range(1, len(mul_time) - 1):
@@ -114,7 +114,7 @@ for item in mul_time[1:-1]:
   max_time = max(spent_time, max_time)
   min_time = min(spent_time, min_time)
 
-avg_time = (mul_time[-1] - mul_time[0]) / (len(mul_time) - 1)
+avg_time = (mul_time[-1] - mul_time[0]) / (len(mul_time) - 2)
 
 print('{ "Read Times": [')
 for item in read_times[:-1]:
@@ -172,7 +172,7 @@ for batch in batches:
     last = item
     max_time = max(spent_time, max_time)
     min_time = min(spent_time, min_time)
-  avg_time = (mul_time[-1] - mul_time[0]) / (len(mul_time) - 1)
+  avg_time = (mul_time[-1] - mul_time[0]) / (len(mul_time) - 2)
 
   print('{ "Inference Times": [')
   for item in inference_times[batch][:-1]:

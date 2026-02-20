@@ -104,7 +104,7 @@ for batch in batches:
   if not os.path.exists(model_path):
     print(f'{{ "Exporting Model": "{model_path}" }},')
     try:
-      try_export_model(model_path, batch, half_precision=False)
+      try_export_model(model_path, batch, half_precision=True)
     except Exception as e:
       print(f'{{ "Error": "Failed to export model {e}" }},')
       continue

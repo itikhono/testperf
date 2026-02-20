@@ -77,7 +77,7 @@ python docker_runner.py [OPTIONS]
 #### Container Management
 
 - `--dont-remove`
-  Keep Docker containers after execution (the default is to remove them).
+  Keep Docker image after execution (the default is to remove them).
 
 - `--shell`
   Open an interactive shell in the container (must be used with `--single`).
