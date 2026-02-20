@@ -1,10 +1,11 @@
+import sys
 import re
 import subprocess
 import os
 import pytest
 from common import get_combined_output
 
-class TestModelLookup:
+class TestModelRuns:
     """Test cases for model lookup functionality in test_perf.py"""
     
     @pytest.fixture(autouse=True)
@@ -16,7 +17,7 @@ class TestModelLookup:
         self.noisy_model = "selftest.models.noisy_model"
         
     def run_subprocess(self, args):
-        cmd = ["python.exe", self.test_script] + args
+        cmd = [sys.executable, self.test_script] + args
         result = subprocess.run(
             cmd,
             cwd=self.parent_dir,

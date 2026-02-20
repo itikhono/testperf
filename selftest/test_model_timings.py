@@ -1,7 +1,8 @@
-import json
+import sys
 import os
 import subprocess
 import pytest
+import json
 from common import get_combined_output
 
 import sys
@@ -24,8 +25,8 @@ class TestModelTimings:
         self.accuracy = 0.15
 
     def run_subprocess(self, args):
-        """Run python.exe test_perf.py from parent folder; return (stdout, stderr, returncode)."""
-        cmd = ["python.exe", self.test_script] + args
+        """Run python test_perf.py from parent folder; return (stdout, stderr, returncode)."""
+        cmd = [sys.executable, self.test_script] + args
         result = subprocess.run(
             cmd,
             cwd=self.parent_dir,
@@ -229,7 +230,6 @@ class TestModelTimings:
         assert code == 0, get_combined_output(stdout, stderr)
 
         out = get_combined_output(stdout, stderr)
-        import json
         data = json.loads(out)
 
         if args[0] == self.const_time_model:

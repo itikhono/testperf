@@ -1,3 +1,4 @@
+import sys
 import re
 import subprocess
 import os
@@ -16,7 +17,7 @@ class TestModelBatchSize:
 
     def run_subprocess(self, args):
         """Run test_perf.py from parent folder using python.exe."""
-        cmd = ["python.exe", self.test_script, self.noisy_model] + list(args)
+        cmd = [sys.executable, self.test_script, self.noisy_model] + list(args)
         result = subprocess.run(
             cmd,
             cwd=self.parent_dir,

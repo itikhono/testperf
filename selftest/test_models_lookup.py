@@ -1,6 +1,6 @@
-import subprocess
 import sys
 import os
+import subprocess
 import pytest
 
 # Override common.get_combined_output to return stdout + stderr
@@ -18,7 +18,7 @@ class TestModelLookup:
         self.test_script = os.path.join(self.parent_dir, "test_perf.py")
         
     def run_subprocess(self, args):
-        cmd = ["python.exe", self.test_script] + args
+        cmd = [sys.executable, self.test_script] + args
         result = subprocess.run(
             cmd,
             cwd=self.parent_dir,

@@ -1,10 +1,11 @@
+import sys
 import os
 import subprocess
 import pytest
 from common import get_combined_output
 
 class TestModelJsonOutput:
-    """Run test_perf.py from parent dir with python.exe and assert JSON-parsable output."""
+    """Run test_perf.py from parent dir with python and assert JSON-parsable output."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -14,8 +15,8 @@ class TestModelJsonOutput:
         self.const_time_model = "selftest.models.const_time_model"
 
     def run_subprocess(self, args):
-        """Run python.exe test_perf.py from parent folder; return (stdout, stderr, returncode)."""
-        cmd = ["python.exe", self.test_script] + args
+        """Run python test_perf.py from parent folder; return (stdout, stderr, returncode)."""
+        cmd = [sys.executable, self.test_script] + args
         result = subprocess.run(
             cmd,
             cwd=self.parent_dir,
