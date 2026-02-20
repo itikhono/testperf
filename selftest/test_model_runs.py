@@ -74,14 +74,14 @@ class TestModelLookup:
                 X = step["Read Runs"]
                 break
         if X is None:
-            raise AssertionError(f'Could not get Steps["Read Runs"] from output: {out[:500]}...') from e
+            raise AssertionError(f'Could not get Steps["Read Runs"] from output: {out[:500]}...')
         read_times = None
         for step in steps:
             if isinstance(step, dict) and "Read Times" in step:
                 read_times = step["Read Times"]
                 break
         if read_times is None:
-            raise AssertionError(f'Could not get Steps["Read Times"] from output: {out[:500]}...') from e
+            raise AssertionError(f'Could not get Steps["Read Times"] from output: {out[:500]}...')
         assert len(read_times) == X, (
             f"Expected len(Read Times) == Read Runs ({X}), but got {len(read_times)}. Read Times: {read_times}"
         )
@@ -116,7 +116,7 @@ class TestModelLookup:
                 X = step["Inference Times"]
                 break
         if X is None:
-            raise AssertionError(f'Could not get Steps["Inference Times"] from output: {out[:500]}...') from e
+            raise AssertionError(f'Could not get Steps["Inference Times"] from output: {out[:500]}...')
         assert len(X) == expected_count, (
             f"Expected len(Inference Times) == {expected_count}, but got {len(X)}. Inference Times: {X}"
         )
