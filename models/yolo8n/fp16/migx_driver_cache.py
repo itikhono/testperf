@@ -85,7 +85,7 @@ def parse_migraphx_output(output):
   
   return data
 
-# Import try_export_model from yolo11l common
+# Import try_export_model from yolo8n common
 from .common import try_export_model
 
 inference_times = {}
@@ -104,7 +104,7 @@ for batch in batches:
   if not os.path.exists(model_path):
     print(f'{{ "Exporting Model": "{model_path}" }},')
     try:
-      try_export_model(model_path, batch, half_precision=False)
+      try_export_model(model_path, batch, half_precision=True)
     except Exception as e:
       print(f'{{ "Error": "Failed to export model {e}" }},')
       continue
