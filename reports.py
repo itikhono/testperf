@@ -7,6 +7,7 @@ from copy import deepcopy
 from shutil import copy, which
 
 def performance_report(model,model_name, read_times, inference_times, warm_up_times, batches):
+  workbook_path = None
   try:
     import openpyxl
     from openpyxl.chart import LineChart, Reference, Series
@@ -84,6 +85,8 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
             x_axis_max = max(x_axis_max, item)
             x_axis_min = min(x_axis_min, item)
 
+    batch_inference_lengths = [len(inference_table[batch_index]) for batch_index in range(len(batches))]
+
     # Table header
     inference_sheet.append(["Metric"] + [f"Batch {batch}" for batch in batches])
     # Aggregated statistics
@@ -114,9 +117,9 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
 
     offset_col = 2
     offset_row = inference_sheet.max_row + 1
-    last_row = offset_row + len(inference_table[0]) - 1
 
     for batch_index in range(len(batches)):
+        last_row = offset_row + batch_inference_lengths[batch_index] - 1
         col_letter = get_column_letter(offset_col + batch_index)
         inference_sheet[col_letter + str(offset_stat_row + 0)] = "=AVERAGE(" + col_letter + str(offset_row) + ":" + col_letter + str(last_row) + ")"
         inference_sheet[col_letter + str(offset_stat_row + 1)] = "=MEDIAN(" + col_letter + str(offset_row) + ":" + col_letter + str(last_row) + ")"
@@ -217,7 +220,8 @@ def performance_report(model,model_name, read_times, inference_times, warm_up_ti
     main_sheet.add_chart(deepcopy(chart), "P20")
 
     idx = 0
-    for idx in range(1, len(inference_table[0]) + 1):
+    max_rows = max(batch_inference_lengths)
+    for idx in range(1, max_rows + 1):
         row = [idx]
         for batch_index in range(len(batches)):
             row.append(inference_table[batch_index][idx - 1] if len(inference_table[batch_index]) > idx - 1 else None)

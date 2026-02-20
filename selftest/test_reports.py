@@ -48,7 +48,14 @@ class TestPerformanceReport:
         inference_times = {}
         warm_up_times = {}
         for b in batches:
-            inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference)] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+            if isinstance(n_inference, int):
+                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference)] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+            elif isinstance(n_inference, dict):
+                if len(n_inference) != len(batches):
+                    raise ValueError("n_inference list must be the same length as batches")
+                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference[b])] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+            else:
+                raise ValueError(f"Invalid n_inference type: {type(n_inference)}")
             warm_up_times[b] = random.uniform(0.5, 5.0)
         return read_times, inference_times, warm_up_times
 
@@ -114,6 +121,22 @@ class TestPerformanceReport:
         full_path, read_times, inference_times, warm_up_times = \
             self._generate_report(batches, n_read=n_read, n_inference=n_inference)
         
+        wb = openpyxl.load_workbook(full_path)
+
+        self._verify_read_sheet(wb["Read"], read_times)
+        self._verify_inference_sheet(
+            wb["Inference"], inference_times, warm_up_times, batches
+        )
+
+        wb.close()
+
+    @pytest.mark.parametrize("batches", [[2, 4, 8]])
+    def test_unaligned_data_values(self, batches):
+        """Verify stored cell values match the data passed to performance_report."""
+        n_read, n_inference = 10, { b:random.randint(5, 25) for b in batches}
+        full_path, read_times, inference_times, warm_up_times = \
+            self._generate_report(batches, n_read=n_read, n_inference=n_inference)
+
         wb = openpyxl.load_workbook(full_path)
 
         self._verify_read_sheet(wb["Read"], read_times)
