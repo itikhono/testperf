@@ -166,7 +166,7 @@ if '--continue' in sys.argv:
 end_index = len(docker_configs)
 if '--last' in sys.argv:
     try:
-        count_idx = sys.argv.index('--count')
+        count_idx = sys.argv.index('--last')
         if count_idx + 1 < len(sys.argv):
             value = int(sys.argv[count_idx + 1]) + 1
             if value >= 0:
@@ -185,8 +185,8 @@ if '--single' in sys.argv:
                 start_index = value
                 end_index = value + 1
             else:
-                start_index = end_index - value
-                end_index = end_index - value + 1
+                start_index = end_index + value
+                end_index = end_index + value + 1
     except (ValueError, IndexError) as e:
         print(f'Error: Invalid --single argument {e}, using range {start_index}..{end_index}')
 
