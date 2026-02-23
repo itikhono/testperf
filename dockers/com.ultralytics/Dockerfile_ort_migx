@@ -1,0 +1,8 @@
+FROM rocm/onnxruntime:rocm7.2_ub24.04_ort1.23_torch2.9.1
+
+# Install dependencies
+RUN pip install ultralytics
+
+# Installing headless version of OpenCV
+RUN pip uninstall opencv-python -y
+RUN pip install opencv-python-headless
