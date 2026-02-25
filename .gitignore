@@ -4,5 +4,15 @@
 __pycache__/
 menv/
 venv/
+.venv/
 temp/
 reports*/
+
+# Local model artifacts / exports
+*.pt
+*.onnx
+
+# Local runs / scratch outputs
+_*.json
+_*.err
+error_output.txt

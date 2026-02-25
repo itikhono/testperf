@@ -20,6 +20,9 @@ Most important feature is automatic generation of performance analysis with char
 
 ### Arguments
 - --batch-size - list of batch sizes has to be verified
+- --model - YOLO model name (e.g. yolo8n, yolo11l). Used by `models.YOLO.*` backends.
+- --precision - precision selector for `models.YOLO.*` backends: fp16 or fp32
+- --imgsz - image size (default 640) for `models.YOLO.*` backends
 - --only-prepare - Only prepare the batch will be run, no inference will be run
 
 ### Examples
@@ -27,13 +30,13 @@ Most important feature is automatic generation of performance analysis with char
 Simple run of YOLO11 Large model benchmarking using ONNXRuntime with default settings, batch size is 1.
 
 ```bash
-python test_perf.py models.yolo11l.ort
+python test_perf.py models.YOLO.ort --model yolo11l
 ```
 
 Simple run of YOLO11 Large model benchmarking using ONNXRuntime with default settings, custom set of batch size: 1, 2, 4, 8, 16.
 
 ```bash
-python test_perf.py models.yolo11l.ort --batch-size 1,2,4,8,16
+python test_perf.py models.YOLO.ort --model yolo11l --precision fp32 --batch-size 1,2,4,8,16
 ```
 
 ## Running batch tasks using docker images
@@ -58,7 +61,7 @@ python docker_runner.py [OPTIONS]
   Only prepare the batch will be run, no inference will be run, applied to all configs
 
 - `--case <test_name>`
-  Run a specific test case (e.g., `models.yolo8n.ort`).
+  Run a specific test case (e.g., `models.YOLO.ort --model yolo8n`).
 
 - `--batch-size <sizes>`
   Set batch sizes as a comma-separated list (default: 1).
