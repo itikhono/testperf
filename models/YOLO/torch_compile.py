@@ -15,13 +15,8 @@ class Model(Model):
             raise Exception('CUDA is not available')
         self.model = None
         self.device = 'cuda'
-        self.compile_mode = 'default'
+        self.compile_mode = 'max-autotune-no-cudagraphs'
         self._input = None
-
-    def prepare_batch(self, batch):
-        _ = batch
-        if self.model_name is None:
-            raise Exception('Missing --model (e.g. --model yolo11l)')
 
     def read(self):
         if self.model_name is None:
@@ -29,6 +24,10 @@ class Model(Model):
         weights = str(self.model_name).strip()
         self.model = YOLO(f'{weights}.pt', task='detect')
         self.model.to(self.device)
+
+        if str(self.precision) == 'fp16':
+            self.model.model.half()
+
         # Compile the underlying nn.Module for speed.
         self.model.model = torch.compile(self.model.model, mode=self.compile_mode)
 

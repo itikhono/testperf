@@ -20,8 +20,12 @@ class Model(Model):
             raise Exception('Missing --model (e.g. --model yolo11l)')
         weights = str(self.model_name).strip()
         self.model = YOLO(f'{weights}.pt', task='detect')
+
         if self.device != 'cpu':
             self.model.to(self.device)
+
+        if str(self.precision) == 'fp16':
+            self.model.model.half()
 
     def prepare(self):
         torch_device = self.device if (self.device != 'cpu' and torch.cuda.is_available()) else 'cpu'

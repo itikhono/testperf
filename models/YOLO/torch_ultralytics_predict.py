@@ -22,6 +22,9 @@ class Model(Model):
         weights = str(self.model_name).strip()
         self.model = YOLO(f'{weights}.pt', task='detect')
 
+        if str(self.precision) == 'fp16':
+            self.model.model.half()
+
     def prepare(self):
         torch_device = 'cuda' if (torch.cuda.is_available() and self.device != 'cpu') else 'cpu'
         dtype = get_torch_dtype(self.precision) if torch_device == 'cuda' else torch.float32

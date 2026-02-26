@@ -223,11 +223,15 @@ if '--single' in sys.argv:
 print(f'Validating configurations in range {start_index}..{end_index}...')
 for i in range(start_index, end_index):
     config = docker_configs[i]
+    native = bool(config.get('native', False))
+    if native:
+        print(f"  [{i}] Valid: native=True python='{config.get('python', sys.executable)}'")
+        continue
     if not config.get('docker_image') and not config.get('docker_file'):
         raise Exception(f"Configuration at index {i} must have either 'docker_image' or 'docker_file' set")
     print(f"  [{i}] Valid: image='{config.get('docker_image', '')}' file='{config.get('docker_file', '')}'")
 
-print('\nStarting docker operations...\n')
+print('\nStarting operations...\n')
 
 # Get current script's folder
 script_folder = os.path.dirname(os.path.abspath(__file__))
@@ -235,6 +239,7 @@ script_folder = os.path.dirname(os.path.abspath(__file__))
 # Second pass: Build and run containers
 for i in range(start_index, end_index):
     config = docker_configs[i]
+    native = bool(config.get('native', False))
     docker_image = config.get('docker_image', 'testperf:latest')
     docker_file = config.get('docker_file', None)
     dont_remove = config.get('dont_remove', False) or ('--dont-remove' in sys.argv)
@@ -247,6 +252,84 @@ for i in range(start_index, end_index):
     config_imgsz = config.get('imgsz', None)
 
     print(f'=== Processing configuration {i} ===')
+
+    # Native mode (no docker): run test_perf.py directly on the host.
+    # Useful for Windows-specific backends like DirectML (`models.YOLO.ort_dml`).
+    if native:
+        py = config.get('python', sys.executable)
+        workdir = config.get('workdir', script_folder)
+
+        if '--case' in sys.argv:
+            try:
+                tests = [sys.argv[sys.argv.index('--case') + 1]]
+                print(f'Running single test: {tests}')
+            except Exception:
+                continue
+
+        if not isinstance(tests, list):
+            print(f'Error: config["tests"] must be a list, got {type(tests)}; skipping')
+            continue
+
+        if models is None:
+            models = [None]
+        if not isinstance(models, list):
+            print(f'Error: config["models"] must be a list, got {type(models)}; skipping')
+            continue
+        if len(models) == 0:
+            models = [None]
+
+        if precisions is None:
+            precisions = [None]
+        if not isinstance(precisions, list):
+            print(f'Error: config["precisions"] must be a list, got {type(precisions)}; skipping')
+            continue
+        if len(precisions) == 0:
+            precisions = [None]
+
+        runs_value = cli_runs if cli_runs is not None else config_runs
+        imgsz_value = cli_imgsz if cli_imgsz is not None else config_imgsz
+
+        for test in tests:
+            for model_name in models:
+                for precision in precisions:
+                    name_suffix = []
+                    if model_name:
+                        name_suffix.append(f'model={model_name}')
+                    if precision:
+                        name_suffix.append(f'precision={precision}')
+                    suffix = f" ({', '.join(name_suffix)})" if name_suffix else ''
+
+                    print(f'\n--- Running test: {test}{suffix} ---')
+
+                    cmd = [
+                        str(py),
+                        os.path.join(script_folder, 'test_perf.py'),
+                        str(test),
+                        '--batch-size',
+                        ','.join(map(str, batches)),
+                    ]
+                    if model_name:
+                        cmd += ['--model', str(model_name)]
+                    if precision:
+                        cmd += ['--precision', str(precision)]
+                    if runs_value is not None:
+                        cmd += ['--runs', str(int(runs_value))]
+                    if imgsz_value is not None:
+                        cmd += ['--imgsz', str(int(imgsz_value))]
+                    if only_prepare:
+                        cmd += ['--only-prepare']
+
+                    print(f'Command: {" ".join(cmd)}')
+                    print()
+                    if '--fake' not in sys.argv:
+                        result = subprocess.run(cmd, cwd=workdir)
+                        if result.returncode != 0:
+                            print(
+                                f'Error: Test {test} failed with exit code {result.returncode}, to continue from this point, use --continue {i} --case {test}, or --single {i} --case {test}'
+                            )
+                            continue
+        continue
+
     # Check if docker image exists
     docker_image_exists = False
     if (docker_image is not None) and (docker_image != ''):
