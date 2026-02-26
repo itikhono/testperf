@@ -33,13 +33,13 @@ Generated Excel report is saved under `testperf/reports/<YYYYMMDD>/` and the fil
 Simple run of YOLO11 Large model benchmarking using ONNXRuntime with default settings, batch size is 1.
 
 ```bash
-python test_perf.py models.YOLO.ort --model yolo11l
+python test_perf.py models.YOLO.ort_cpu --model yolo11l
 ```
 
 Simple run of YOLO11 Large model benchmarking using ONNXRuntime with default settings, custom set of batch size: 1, 2, 4, 8, 16.
 
 ```bash
-python test_perf.py models.YOLO.ort --model yolo11l --precision fp32 --batch-size 1,2,4,8,16
+python test_perf.py models.YOLO.ort_cpu --model yolo11l --precision fp32 --batch-size 1,2,4,8,16
 ```
 
 ## Running batch tasks using docker images
@@ -64,7 +64,7 @@ python docker_runner.py [OPTIONS]
   Only prepare the batch will be run, no inference will be run, applied to all configs
 
 - `--case <test_name>`
-  Run a specific backend module (e.g., `models.YOLO.ort`). Model name / precision are controlled via config (`models`, `precisions`) or global CLI options in `docker_runner.py`.
+  Run a specific backend module (e.g., `models.YOLO.ort_cpu`). Model name / precision are controlled via config (`models`, `precisions`) or global CLI options in `docker_runner.py`.
 
 - `--batch-size <sizes>`
   Set batch sizes as a comma-separated list (default: 1).
@@ -116,7 +116,7 @@ python docker_runner.py --single 0 --batch-size 1,4,8,16
 
 Run a specific test case on configuration 2:
 ```bash
-python docker_runner.py --single 2 --case models.YOLO.ort
+python docker_runner.py --single 2 --case models.YOLO.ort_cpu
 ```
 
 Continue from configuration 3 onward:
@@ -161,7 +161,7 @@ This file should be a JSON list of configuration objects, each containing:
     "docker_custom_run": "",
     "only_prepare": true,
     "docker_hostname": "test_machine_A",
-    "tests": ["models.YOLO.ort", "models.YOLO.ort_dml"],
+    "tests": ["models.YOLO.ort_cpu", "models.YOLO.ort_dml"],
     "models": ["yolo8n"],
     "precisions": ["fp16", "fp32"]
   },
@@ -171,7 +171,7 @@ This file should be a JSON list of configuration objects, each containing:
     "dont_remove": true,
     "docker_custom_run": "docker run -it --gpus all",
     "docker_hostname": "test_machine_B",
-    "tests": ["models.YOLO.ort", "models.YOLO.ort_ov"],
+    "tests": ["models.YOLO.ort_cpu", "models.YOLO.ort_ov_cpu"],
     "models": ["yolo11l", "yolo12l"],
     "precisions": ["fp16"]
   }

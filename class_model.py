@@ -5,7 +5,7 @@ class Model:
     """
     Base class / interface for inference backends used by `test_perf.py`.
 
-    The harness imports a backend module (e.g. `models.YOLO.ort`) and instantiates
+    The harness imports a backend module (e.g. `models.YOLO.ort_cpu`) and instantiates
     `Model()`. Then it calls the hooks below in a fixed order while measuring time.
 
     **Call order (simplified)**
@@ -38,37 +38,6 @@ class Model:
 
     - Do not print to stdout from backend code (stdout is reserved for JSON).
       If you need logs, print to stderr.
-
-    **Minimal backend example**
-
-    ```python
-    import numpy as np
-    import onnxruntime as ort
-    from class_model import Model
-
-    class Model(Model):
-        def __init__(self):
-            super().__init__()
-            self.sess = None
-
-        def prepare_batch(self, batch):
-            # export/cache files for this batch (optional)
-            pass
-
-        def read(self):
-            # load model into memory for current self.batch
-            self.sess = ort.InferenceSession("model.onnx")
-
-        def prepare(self):
-            # allocate inputs for current self.batch
-            self.input = np.random.rand(self.batch, 3, 640, 640).astype(np.float32)
-
-        def inference(self):
-            # run one inference
-            self.sess.run([], {"images": self.input})
-
-        def shutdown(self):
-            self.sess = None
     ```
     """
 

@@ -94,7 +94,7 @@ Configuration File:
     - only_prepare: (Optional) Only prepare the batch will be run, no inference will be run
     - docker_custom_run: (Optional) Custom docker run command
     - docker_hostname: (Optional) Hostname to set in container
-    - tests: List of backend modules to run (e.g. 'models.YOLO.ort')
+    - tests: List of backend modules to run (e.g. 'models.YOLO.ort_cpu')
     - models: (Optional) List of YOLO model names to pass as --model (e.g. ['yolo11l', 'yolov8n'])
     - precisions: (Optional) List of precisions to pass as --precision (e.g. ['fp16', 'fp32'])
     - runs: (Optional) Value to pass as --runs
@@ -108,7 +108,7 @@ Configuration File:
       "only_prepare": false,
       "docker_custom_run": "",
       "docker_hostname": "test_machine_A",
-      "tests": ["models.YOLO.ort", "models.YOLO.ort_cuda"],
+      "tests": ["models.YOLO.ort_cpu", "models.YOLO.ort_cuda"],
       "models": ["yolo11l"],
       "precisions": ["fp16", "fp32"],
       "runs": 10,

@@ -12,7 +12,8 @@ class Model(Model):
     def __init__(self):
         super().__init__()
         self.sess = None
-        self.sess_data = {}
+        # Be explicit: force CPU EP even if other EPs are available in the environment.
+        self.sess_data = {'providers': ['CPUExecutionProvider']}
 
     def prepare_batch(self, batch):
         if self.model_name is None:
