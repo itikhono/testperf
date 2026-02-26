@@ -256,7 +256,16 @@ def main() -> None:
     try:
         import reports
 
-        reports.performance_report(model, backend_name, read_times, inference_times, warm_up_times, batches)
+        reports.performance_report(
+            model,
+            backend_name,
+            args.model,
+            args.precision,
+            read_times,
+            inference_times,
+            warm_up_times,
+            batches,
+        )
     except Exception as e:
         w.line(f'{{ "Error": "Failed to generate XLS report {e}" }},')
 

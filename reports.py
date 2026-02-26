@@ -7,7 +7,16 @@ from copy import deepcopy
 from shutil import copy, which
 
 
-def performance_report(model, model_name, read_times, inference_times, warm_up_times, batches):
+def performance_report(
+    model,
+    backend_name,
+    model_name,
+    precision,
+    read_times,
+    inference_times,
+    warm_up_times,
+    batches,
+):
     workbook_path = None
     try:
         import openpyxl
@@ -384,13 +393,29 @@ def performance_report(model, model_name, read_times, inference_times, warm_up_t
         report_datetime = datetime.datetime.now()
         main_sheet.title = 'Overview'
         main_sheet.column_dimensions[get_column_letter(1)].width = 30
-        main_sheet.append(['Model:', model_name])
+        main_sheet.append(['Backend:', backend_name])
         main_sheet.merge_cells(
             start_row=main_sheet.max_row,
             start_column=2,
             end_row=main_sheet.max_row,
             end_column=10,
         )
+        if model_name:
+            main_sheet.append(['Model Name:', str(model_name)])
+            main_sheet.merge_cells(
+                start_row=main_sheet.max_row,
+                start_column=2,
+                end_row=main_sheet.max_row,
+                end_column=10,
+            )
+        if precision:
+            main_sheet.append(['Precision:', str(precision)])
+            main_sheet.merge_cells(
+                start_row=main_sheet.max_row,
+                start_column=2,
+                end_row=main_sheet.max_row,
+                end_column=10,
+            )
         main_sheet.append(['Description:', str(model)])
         main_sheet.merge_cells(
             start_row=main_sheet.max_row,
@@ -464,7 +489,13 @@ def performance_report(model, model_name, read_times, inference_times, warm_up_t
         except Exception as e:
             main_sheet.append([f'Cannot get environment variables {e}'])
 
-        workbook_path = f'{platform.node().lower()}_{model_name}_{report_datetime.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        workbook_path = (
+            f'{platform.node().lower()}_'
+            f'{backend_name}_'
+            f'{model_name}_'
+            f'{precision}_'
+            f'{report_datetime.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        )
         wb.save(workbook_path)
 
         reports_path = os.path.join(os.path.dirname(__file__), 'reports', report_datetime.strftime('%Y%m%d'))

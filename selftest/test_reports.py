@@ -71,7 +71,16 @@ class TestPerformanceReport:
         read_times, inference_times, warm_up_times = self._make_data(batches, n_read, n_inference, seed)
         model = _MockModel(total_inference_runs=10)
         model_name = f'test_{datetime.datetime.now().strftime("%H%M%S%f")}'
-        workbook_path = performance_report(model, model_name, read_times, inference_times, warm_up_times, batches)
+        workbook_path = performance_report(
+            model,
+            model_name,
+            'yolo11l',
+            'fp16',
+            read_times,
+            inference_times,
+            warm_up_times,
+            batches,
+        )
         full_path = self._resolve_workbook(workbook_path)
         return full_path, read_times, inference_times, warm_up_times
 
@@ -92,7 +101,9 @@ class TestPerformanceReport:
                 labels.add(str(row[0]))
 
         checkable_labels = [
-            'Model:',
+            'Backend:',
+            'Model Name:',
+            'Precision:',
             'Description:',
             'Run Command:',
             'Report Date:',
