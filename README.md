@@ -172,7 +172,7 @@ This file should be a JSON list of configuration objects, each containing:
     "docker_custom_run": "docker run -it --gpus all",
     "docker_hostname": "test_machine_B",
     "tests": ["models.YOLO.ort", "models.YOLO.ort_ov"],
-    "models": ["yolo11l"],
+    "models": ["yolo11l", "yolo12l"],
     "precisions": ["fp16"]
   }
 ]
