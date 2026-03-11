@@ -24,6 +24,8 @@ class Model(Model):
         if self.device != 'cpu':
             self.model.to(self.device)
 
+        self.model.fuse()
+
         if str(self.precision) == 'fp16':
             self.model.model.half()
 

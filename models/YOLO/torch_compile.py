@@ -28,8 +28,10 @@ class Model(Model):
         if str(self.precision) == 'fp16':
             self.model.model.half()
 
-        # Compile the underlying nn.Module for speed.
-        self.model.model = torch.compile(self.model.model, mode=self.compile_mode)
+        import os
+        os.environ['TORCH_COMPILE_DISABLE'] = '0'
+
+        self.compiled_model = torch.compile(self.model.model, mode=self.compile_mode)
 
     def prepare(self):
         dtype = get_torch_dtype(self.precision)
@@ -41,7 +43,7 @@ class Model(Model):
 
     def inference(self):
         with torch.no_grad():
-            return self.model(self._input, verbose=False)
+            return self.compiled_model(self._input)
 
     def shutdown(self):
         if self.model is not None:
@@ -49,4 +51,3 @@ class Model(Model):
             self.model = None
         self._input = None
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
-

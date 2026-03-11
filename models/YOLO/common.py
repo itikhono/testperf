@@ -1,4 +1,5 @@
 import os
+import shutil
 
 
 def get_np_dtype(precision):
@@ -58,4 +59,4 @@ def try_export_model(file_path, model_name, batch, precision, imgsz, dynamic=Fal
     onnx_path = model.export(format='onnx', imgsz=int(imgsz), batch=int(batch), half=bool(half), dynamic=bool(dynamic))
 
     if str(onnx_path) != str(file_path):
-        os.replace(str(onnx_path), file_path)
+        shutil.move(str(onnx_path), file_path)

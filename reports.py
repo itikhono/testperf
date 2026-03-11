@@ -511,7 +511,8 @@ def performance_report(
                 print(f'{{ "Error": "Failed to copy !StatViewer.xlsm {e}" }}')
         os.rename(workbook_path, os.path.join(reports_path, workbook_path))
 
-        print(f'{{ "Workbook": "{os.path.join(reports_path, workbook_path).replace("\\", "/")}" }},')
+        fwd_slash_path = os.path.join(reports_path, workbook_path).replace("\\", "/")
+        print(f'{{ "Workbook": "{fwd_slash_path}" }},')
 
     except Exception as e:
         print(f'{{ "Error": "Failed to load openpyxl {e}" }},')
