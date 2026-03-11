@@ -162,6 +162,9 @@ def main() -> None:
         w.line('] }')
         return
 
+    # Set batch size to the first one for the read timings
+    model.batch = batches[0]
+
     # Read timing: 1st + repeated reads.
     t.checkpoint()
     model.read1st()
