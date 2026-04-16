@@ -1,5 +1,8 @@
 FROM rocm/onnxruntime:rocm7.2_ub24.04_ort1.23_torch2.9.1
 
+# Ensure ROCm libraries are discoverable by Python modules that dlopen ROCm deps.
+ENV PYTHONPATH="/opt/rocm/lib:${PYTHONPATH}"
+
 # Install dependencies
 RUN pip install ultralytics
 

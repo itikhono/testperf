@@ -1,5 +1,8 @@
 FROM rocm/pytorch:latest
 
+# Ensure ROCm libraries are discoverable by Python modules that dlopen ROCm deps.
+ENV PYTHONPATH="/opt/rocm/lib:${PYTHONPATH}"
+
 # Install dependencies
 RUN pip install ultralytics
 

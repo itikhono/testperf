@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import subprocess
+import sys
 from time import perf_counter
 
-script_run_time  = perf_counter()
+script_run_time = perf_counter()
 
 # Docker configurations
 docker_configs = [
-#   Example configuration
-#    {
-#        'docker_image': 'test_image_1',
-#        'docker_file': './Dockerfile1',
-#        'dont_remove': False,
-#        'only_prepare': False, # if True, only prepare the batch will be run, no inference will be run
-#        'docker_custom_run': '',
-#        'docker_hostname': 'epyc_gpu', # optional, useful for understanding test environment
-#        'tests': ['models.yolo8n.ort', 'models.yolo8n.ort_dml']
-#    },
-#    {
-#        'docker_image': 'test_image_2',
-#        'docker_file': '',
-#        'dont_remove': True,
-#        'only_prepare': False,
-#        'docker_custom_run': 'docker run -it --gpus all',
-#        'docker_hostname': 'epyc_all_gpu', # optional, useful for understanding test environment
-#        'tests': ['models.yolo11l.ort', 'models.yolo11l.ort_ov']
-#    },
+    #   Example configuration
+    #    {
+    #        'docker_image': 'test_image_1',
+    #        'docker_file': './Dockerfile1',
+    #        'dont_remove': False,
+    #        'only_prepare': False, # if True, only prepare the batch will be run, no inference will be run
+    #        'docker_custom_run': '',
+    #        'docker_hostname': 'epyc_gpu', # optional, useful for understanding test environment
+    #        'tests': ['models.yolo8n.ort', 'models.yolo8n.ort_dml']
+    #    },
+    #    {
+    #        'docker_image': 'test_image_2',
+    #        'docker_file': '',
+    #        'dont_remove': True,
+    #        'only_prepare': False,
+    #        'docker_custom_run': 'docker run -it --gpus all',
+    #        'docker_hostname': 'epyc_all_gpu', # optional, useful for understanding test environment
+    #        'tests': ['models.yolo11l.ort', 'models.yolo11l.ort_ov']
+    #    },
 ]
+
 
 def help_message():
     help_text = """
@@ -45,6 +46,8 @@ Test Selection:
   --case <test_name>         Run a specific test case (e.g., 'models.yolo8n.ort')
   --batch-size <sizes>       Set batch sizes as comma-separated list (default: 1)
                              Example: --batch-size 1,4,8
+  --runs <n>                 Pass --runs to test_perf.py (overrides config value)
+  --imgsz <n>                Pass --imgsz to test_perf.py (overrides config value)
 
 Container Selection:
   --continue <index>         Start execution from a specific configuration index
@@ -91,7 +94,11 @@ Configuration File:
     - only_prepare: (Optional) Only prepare the batch will be run, no inference will be run
     - docker_custom_run: (Optional) Custom docker run command
     - docker_hostname: (Optional) Hostname to set in container
-    - tests: List of test cases to run
+    - tests: List of backend modules to run (e.g. 'models.YOLO.ort_cpu')
+    - models: (Optional) List of YOLO model names to pass as --model (e.g. ['yolo11l', 'yolov8n'])
+    - precisions: (Optional) List of precisions to pass as --precision (e.g. ['fp16', 'fp32'])
+    - runs: (Optional) Value to pass as --runs
+    - imgsz: (Optional) Value to pass as --imgsz
 
   Example 'docker_runner.json':
   [
@@ -101,7 +108,11 @@ Configuration File:
       "only_prepare": false,
       "docker_custom_run": "",
       "docker_hostname": "test_machine_A",
-      "tests": ["models.yolo8n.ort", "models.yolo8n.ort_dml"]
+      "tests": ["models.YOLO.ort_cpu", "models.YOLO.ort_cuda"],
+      "models": ["yolo11l"],
+      "precisions": ["fp16", "fp32"],
+      "runs": 10,
+      "imgsz": 640
     },
     {
       "docker_image": "my_image_2",
@@ -110,11 +121,14 @@ Configuration File:
       "only_prepare": false,
       "docker_custom_run": "docker run -it --gpus all",
       "docker_hostname": "test_machine_B",
-      "tests": ["models.yolo11l.ort", "models.yolo11l.ort_ov"]
+      "tests": ["models.YOLO.ort_migx_gpu_cache"],
+      "models": ["yolo11l"],
+      "precisions": ["fp16"]
     }
   ]
 """
     print(help_text)
+
 
 if '--help' in sys.argv or '-h' in sys.argv or '-help' in sys.argv:
     help_message()
@@ -124,24 +138,25 @@ config_file = './docker_runner.json'
 if '--config' in sys.argv:
     config_file = sys.argv[sys.argv.index('--config') + 1]
     if not os.path.exists(config_file):
-        print(f"Error: No {config_file} file found, exiting")
+        print(f'Error: No {config_file} file found, exiting')
         exit(1)
 
 if os.path.exists(config_file):
     import json
+
     with open(config_file, 'r') as f:
         docker_configs = json.load(f)
 else:
-    print(f"No {config_file} file found, using default configurations")
+    print(f'No {config_file} file found, using default configurations')
 
-print("Current docker_configs:")
+print('Current docker_configs:')
 for idx, config in enumerate(docker_configs):
-    print(f"[{idx}] {config}")
+    print(f'[{idx}] {config}')
 
 if '--show-config' in sys.argv:
     exit(0)
 if len(docker_configs) == 0:
-    print("No docker configurations found, exiting")
+    print('No docker configurations found, exiting')
     exit(1)
 
 # Create batches array as in test_perf.py
@@ -151,6 +166,20 @@ if '--batch-size' in sys.argv:
         batches = [int(x) for x in sys.argv[sys.argv.index('--batch-size') + 1].split(',')]
     except Exception as e:
         print(f'Error: Failed to set batch size {e}, using default [1]')
+
+cli_runs = None
+if '--runs' in sys.argv:
+    try:
+        cli_runs = int(sys.argv[sys.argv.index('--runs') + 1])
+    except Exception as e:
+        print(f'Error: Failed to set --runs {e}, ignoring')
+
+cli_imgsz = None
+if '--imgsz' in sys.argv:
+    try:
+        cli_imgsz = int(sys.argv[sys.argv.index('--imgsz') + 1])
+    except Exception as e:
+        print(f'Error: Failed to set --imgsz {e}, ignoring')
 
 # Get --continue argument and following index or 0 if no argument
 start_index = 0
@@ -191,14 +220,14 @@ if '--single' in sys.argv:
         print(f'Error: Invalid --single argument {e}, using range {start_index}..{end_index}')
 
 # First pass: Validate docker_image or docker_file exists
-print(f"Validating configurations in range {start_index}..{end_index}...")
+print(f'Validating configurations in range {start_index}..{end_index}...')
 for i in range(start_index, end_index):
     config = docker_configs[i]
     if not config.get('docker_image') and not config.get('docker_file'):
         raise Exception(f"Configuration at index {i} must have either 'docker_image' or 'docker_file' set")
     print(f"  [{i}] Valid: image='{config.get('docker_image', '')}' file='{config.get('docker_file', '')}'")
 
-print("\nStarting docker operations...\n")
+print('\nStarting docker operations...\n')
 
 # Get current script's folder
 script_folder = os.path.dirname(os.path.abspath(__file__))
@@ -212,15 +241,21 @@ for i in range(start_index, end_index):
     only_prepare = config.get('only_prepare', False) or ('--only-prepare' in sys.argv)
     docker_custom_run = config.get('docker_custom_run', '')
     tests = config.get('tests', [])
+    models = config.get('models', None)
+    precisions = config.get('precisions', None)
+    config_runs = config.get('runs', None)
+    config_imgsz = config.get('imgsz', None)
 
-    print(f"=== Processing configuration {i} ===")
+    print(f'=== Processing configuration {i} ===')
+
     # Check if docker image exists
     docker_image_exists = False
-    if (not docker_image is None) and (docker_image != ''):
+    if (docker_image is not None) and (docker_image != ''):
         check_cmd = ['docker', 'image', 'inspect', docker_image]
-        print(f"  Command: {' '.join(check_cmd)}")
-        result = subprocess.run(check_cmd, cwd=script_folder, capture_output=True)
-        docker_image_exists = (result.returncode == 0)
+        print(f'  Command: {" ".join(check_cmd)}')
+        if '--fake' not in sys.argv:
+            result = subprocess.run(check_cmd, cwd=script_folder, capture_output=True)
+            docker_image_exists = result.returncode == 0
     else:
         docker_image = 'testperf:latest'
 
@@ -230,26 +265,35 @@ for i in range(start_index, end_index):
         exit(1)
 
     # Build image if docker_image doesn't exist but docker_file does
-    if (not docker_image_exists) and (not docker_file is None) and (docker_file != ''):
+    if (not docker_image_exists) and (docker_file is not None) and (docker_file != ''):
         if docker_file.startswith('docker pull '):
-            print(f"Pulling docker image from {docker_file}...")
+            print(f'Pulling docker image from {docker_file}...')
             build_cmd = docker_file.split()
         else:
-            print(f"Building docker image from {docker_file}...")
+            print(f'Building docker image from {docker_file}...')
             build_cmd = ['docker', 'build', '-f', docker_file, '-t', docker_image, '.']
-        print(f"  Command: {' '.join(build_cmd)}")
-        if not '--fake' in sys.argv:
+        print(f'  Command: {" ".join(build_cmd)}')
+        if '--fake' not in sys.argv:
             result = subprocess.run(build_cmd, cwd=script_folder)
             if result.returncode != 0:
-                print(f"Error: Failed to build image from {docker_file}, to continue from this point, use --continue {i}, or --single {i}")
+                print(
+                    f'Error: Failed to build image from {docker_file}, to continue from this point, use --continue {i}, or --single {i}'
+                )
                 continue
-        if docker_file.startswith('docker pull ') and docker_image != docker_file[len('docker pull '):].strip():
-            tag_cmd = ['docker', 'tag', docker_file[len('docker pull '):], docker_image]
-            print(f"  Command: {' '.join(tag_cmd)}")
-            if not '--fake' in sys.argv:
+        if docker_file.startswith('docker pull ') and docker_image != docker_file[len('docker pull ') :].strip():
+            tag_cmd = [
+                'docker',
+                'tag',
+                docker_file[len('docker pull ') :],
+                docker_image,
+            ]
+            print(f'  Command: {" ".join(tag_cmd)}')
+            if '--fake' not in sys.argv:
                 result = subprocess.run(tag_cmd, cwd=script_folder)
                 if result.returncode != 0:
-                    print(f"Error: Failed to build image from {docker_file}, to continue from this point, use --continue {i}")
+                    print(
+                        f'Error: Failed to build image from {docker_file}, to continue from this point, use --continue {i}'
+                    )
                     continue
 
     # Build the docker run command
@@ -276,56 +320,104 @@ for i in range(start_index, end_index):
     # Add docker image
     docker_cmd.append(docker_image)
 
-    if (('--single' in sys.argv) and ('--shell' in sys.argv)):
-        docker_cmd.insert(-1, '-it');
-        print(f"Running shell: {' '.join(docker_cmd)}")
-        if not '--fake' in sys.argv:
+    if ('--single' in sys.argv) and ('--shell' in sys.argv):
+        docker_cmd.insert(-1, '-it')
+        print(f'Running shell: {" ".join(docker_cmd)}')
+        if '--fake' not in sys.argv:
             result = subprocess.run(docker_cmd, cwd=script_folder)
         exit(0)
 
     # Add the command to run inside container
-    docker_cmd.extend(['sh', '-c', 'pip3 install -r /root/testperf/requirements.txt && python3 /root/testperf/test_perf.py '])
+    docker_cmd.extend(
+        [
+            'sh',
+            '-c',
+            'pip3 install -r /root/testperf/requirements.txt && python3 /root/testperf/test_perf.py ',
+        ]
+    )
 
     if '--case' in sys.argv:
         try:
             tests = [sys.argv[sys.argv.index('--case') + 1]]
-            print(f"Running single test: {tests}")
-        except Exception as e:
+            print(f'Running single test: {tests}')
+        except Exception:
             continue
 
-    # Run each test
+    if not isinstance(tests, list):
+        print(f'Error: config["tests"] must be a list, got {type(tests)}; skipping')
+        continue
+
+    if models is None:
+        models = [None]
+    if not isinstance(models, list):
+        print(f'Error: config["models"] must be a list, got {type(models)}; skipping')
+        continue
+    if len(models) == 0:
+        models = [None]
+
+    if precisions is None:
+        precisions = [None]
+    if not isinstance(precisions, list):
+        print(f'Error: config["precisions"] must be a list, got {type(precisions)}; skipping')
+        continue
+    if len(precisions) == 0:
+        precisions = [None]
+
+    runs_value = cli_runs if cli_runs is not None else config_runs
+    imgsz_value = cli_imgsz if cli_imgsz is not None else config_imgsz
+
     for test in tests:
-        print(f"\n--- Running test: {test} ---")
-        
-        # Build the full command with test name and batches
-        test_cmd = docker_cmd.copy()
-        # Append test name and batch-size to the python command
-        test_cmd[-1] = test_cmd[-1] + f'{test} --batch-size {",".join(map(str, batches))}'
-        if only_prepare:
-            test_cmd[-1] = test_cmd[-1] + ' --only-prepare'
+        for model_name in models:
+            for precision in precisions:
+                name_suffix = []
+                if model_name:
+                    name_suffix.append(f'model={model_name}')
+                if precision:
+                    name_suffix.append(f'precision={precision}')
+                suffix = f" ({', '.join(name_suffix)})" if name_suffix else ''
 
-        print(f"Command: {' '.join(test_cmd)}")
-        print()
+                print(f'\n--- Running test: {test}{suffix} ---')
 
-        if not '--fake' in sys.argv:
-            # Run the docker command
-            result = subprocess.run(test_cmd, cwd=script_folder)
-            
-            if result.returncode != 0:
-                print(f"Error: Test {test} failed with exit code {result.returncode}, to continue from this point, use --continue {i} --case {test}, or --single {i} --case {test}")
-                continue
+                # Build the full command with test name and batches
+                test_cmd = docker_cmd.copy()
+                cmd = test_cmd[-1] + f'{test} --batch-size {",".join(map(str, batches))}'
 
-    if dont_remove == False:
-        print(f"Removing image {docker_image}...")
+                if model_name:
+                    cmd += f' --model {model_name}'
+                if precision:
+                    cmd += f' --precision {precision}'
+                if runs_value is not None:
+                    cmd += f' --runs {int(runs_value)}'
+                if imgsz_value is not None:
+                    cmd += f' --imgsz {int(imgsz_value)}'
+                if only_prepare:
+                    cmd += ' --only-prepare'
+
+                test_cmd[-1] = cmd
+
+                print(f'Command: {" ".join(test_cmd)}')
+                print()
+
+                if '--fake' not in sys.argv:
+                    # Run the docker command
+                    result = subprocess.run(test_cmd, cwd=script_folder)
+
+                    if result.returncode != 0:
+                        print(
+                            f'Error: Test {test} failed with exit code {result.returncode}, to continue from this point, use --continue {i} --case {test}, or --single {i} --case {test}'
+                        )
+                        continue
+
+    if not dont_remove:
+        print(f'Removing image {docker_image}...')
         remove_cmd = ['docker', 'image', 'rm', docker_image]
-        print(f"  Command: {' '.join(remove_cmd)}")
-        if not '--fake' in sys.argv:
+        print(f'  Command: {" ".join(remove_cmd)}')
+        if '--fake' not in sys.argv:
             result = subprocess.run(remove_cmd, cwd=script_folder)
             if result.returncode != 0:
-                print(f"Error: Failed to remove image {docker_image}, to continue from this point, use --continue {i}")
+                print(f'Error: Failed to remove image {docker_image}, to continue from this point, use --continue {i}')
                 continue
 
-print("All operations completed")
+print('All operations completed')
 total_time = perf_counter() - script_run_time
-print(f"Total time: {total_time} seconds")
-
+print(f'Total time: {total_time} seconds')

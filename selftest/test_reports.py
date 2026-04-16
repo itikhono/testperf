@@ -1,9 +1,10 @@
-import os
-import sys
-import random
 import datetime
-import pytest
+import os
+import random
+import sys
+
 import openpyxl
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from reports import performance_report
@@ -11,14 +12,15 @@ from reports import performance_report
 
 class _MockModel:
     """Minimal stand-in for a model object required by performance_report."""
+
     def __init__(self, total_inference_runs=100):
         self.total_inference_runs = total_inference_runs
 
     def __str__(self):
-        return "MockModel for testing"
+        return 'MockModel for testing'
+
 
 class TestPerformanceReport:
-
     @pytest.fixture(autouse=True)
     def setup(self, tmp_path, monkeypatch):
         self.parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,114 +37,121 @@ class TestPerformanceReport:
 
     def _resolve_workbook(self, workbook_path):
         """Return absolute path where performance_report moved the file."""
-        date_str = datetime.datetime.now().strftime("%Y%m%d")
+        date_str = datetime.datetime.now().strftime('%Y%m%d')
         full = os.path.join(self.reports_base, date_str, workbook_path)
-        assert os.path.isfile(full), f"Workbook not found at {full}"
+        assert os.path.isfile(full), f'Workbook not found at {full}'
         self._cleanup_paths.append(full)
         return full
 
     def _make_data(self, batches, n_read=10, n_inference=12, seed=42):
         random.seed(seed)
         # last element is the summary
-        read_times = [random.uniform(0.01, 1.0) for _ in range(n_read)] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+        read_times = [random.uniform(0.01, 1.0) for _ in range(n_read)] + [
+            {'Minimum': 0.01, 'Maximum': 1.0, 'Average': 0.5}
+        ]
         inference_times = {}
         warm_up_times = {}
         for b in batches:
             if isinstance(n_inference, int):
-                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference)] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference)] + [
+                    {'Minimum': 0.01, 'Maximum': 1.0, 'Average': 0.5}
+                ]
             elif isinstance(n_inference, dict):
                 if len(n_inference) != len(batches):
-                    raise ValueError("n_inference list must be the same length as batches")
-                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference[b])] + [{"Minimum": 0.01, "Maximum": 1.0, "Average": 0.5}]
+                    raise ValueError('n_inference list must be the same length as batches')
+                inference_times[b] = [random.uniform(0.01, 1.0) for _ in range(n_inference[b])] + [
+                    {'Minimum': 0.01, 'Maximum': 1.0, 'Average': 0.5}
+                ]
             else:
-                raise ValueError(f"Invalid n_inference type: {type(n_inference)}")
+                raise ValueError(f'Invalid n_inference type: {type(n_inference)}')
             warm_up_times[b] = random.uniform(0.5, 5.0)
         return read_times, inference_times, warm_up_times
 
     def _generate_report(self, batches, n_read=10, n_inference=12, seed=42):
-        read_times, inference_times, warm_up_times = self._make_data(
-            batches, n_read, n_inference, seed
-        )
+        read_times, inference_times, warm_up_times = self._make_data(batches, n_read, n_inference, seed)
         model = _MockModel(total_inference_runs=10)
-        model_name = f"test_{datetime.datetime.now().strftime('%H%M%S%f')}"
+        model_name = f'test_{datetime.datetime.now().strftime("%H%M%S%f")}'
         workbook_path = performance_report(
-            model, model_name, read_times, inference_times, warm_up_times, batches
+            model,
+            model_name,
+            'yolo11l',
+            'fp16',
+            read_times,
+            inference_times,
+            warm_up_times,
+            batches,
         )
         full_path = self._resolve_workbook(workbook_path)
         return full_path, read_times, inference_times, warm_up_times
 
     def test_report_worksheets_and_overview(self):
         """Generate a report, verify worksheet names and Overview labels."""
-        full_path, *_ = self._generate_report(
-            batches=[1], n_read=3, n_inference=4
-        )
+        full_path, *_ = self._generate_report(batches=[1], n_read=3, n_inference=4)
 
         wb = openpyxl.load_workbook(full_path)
 
-        expected_sheets = ["Overview", "Read", "Inference"]
+        expected_sheets = ['Overview', 'Read', 'Inference']
         for name in expected_sheets:
             assert name in wb.sheetnames, f"Missing worksheet '{name}'"
 
-        overview = wb["Overview"]
+        overview = wb['Overview']
         labels = set()
         for row in overview.iter_rows(min_col=1, max_col=1, values_only=True):
             if row[0] is not None:
                 labels.add(str(row[0]))
 
         checkable_labels = [
-            "Model:",
-            "Description:",
-            "Run Command:",
-            "Report Date:",
-            "Batches:",
-            "Total Inference Runs:",
-            "System Information:",
-            "Hostname:",
-            "OS:",
-            "OS Version:",
-            "OS Release:",
-            "Python Version:",
-            "CPU:",
+            'Backend:',
+            'Model Name:',
+            'Precision:',
+            'Description:',
+            'Run Command:',
+            'Report Date:',
+            'Batches:',
+            'Total Inference Runs:',
+            'System Information:',
+            'Hostname:',
+            'OS:',
+            'OS Version:',
+            'OS Release:',
+            'Python Version:',
+            'CPU:',
         ]
         for lbl in checkable_labels:
             assert lbl in labels, f"Expected '{lbl}' on Overview sheet"
 
-        assert "Loaded Modules:" in labels, \
-            "Expected 'Loaded Modules:' on Overview sheet"
-        assert "Environment Variables:" in labels, \
-            "Expected 'Environment Variables:' on Overview sheet"
+        assert 'Loaded Modules:' in labels, "Expected 'Loaded Modules:' on Overview sheet"
+        assert 'Environment Variables:' in labels, "Expected 'Environment Variables:' on Overview sheet"
 
         wb.close()
 
-    @pytest.mark.parametrize("batches", [[1], [2, 4, 8]])
+    @pytest.mark.parametrize('batches', [[1], [2, 4, 8]])
     def test_data_values(self, batches):
         """Verify stored cell values match the data passed to performance_report."""
         n_read, n_inference = 10, 12
-        full_path, read_times, inference_times, warm_up_times = \
-            self._generate_report(batches, n_read=n_read, n_inference=n_inference)
-        
+        full_path, read_times, inference_times, warm_up_times = self._generate_report(
+            batches, n_read=n_read, n_inference=n_inference
+        )
+
         wb = openpyxl.load_workbook(full_path)
 
-        self._verify_read_sheet(wb["Read"], read_times)
-        self._verify_inference_sheet(
-            wb["Inference"], inference_times, warm_up_times, batches
-        )
+        self._verify_read_sheet(wb['Read'], read_times)
+        self._verify_inference_sheet(wb['Inference'], inference_times, warm_up_times, batches)
 
         wb.close()
 
-    @pytest.mark.parametrize("batches", [[2, 4, 8]])
+    @pytest.mark.parametrize('batches', [[2, 4, 8]])
     def test_unaligned_data_values(self, batches):
         """Verify stored cell values match the data passed to performance_report."""
-        n_read, n_inference = 10, { b:random.randint(5, 25) for b in batches}
-        full_path, read_times, inference_times, warm_up_times = \
-            self._generate_report(batches, n_read=n_read, n_inference=n_inference)
+        n_read, n_inference = 10, {b: random.randint(5, 25) for b in batches}
+        full_path, read_times, inference_times, warm_up_times = self._generate_report(
+            batches, n_read=n_read, n_inference=n_inference
+        )
 
         wb = openpyxl.load_workbook(full_path)
 
-        self._verify_read_sheet(wb["Read"], read_times)
-        self._verify_inference_sheet(
-            wb["Inference"], inference_times, warm_up_times, batches
-        )
+        self._verify_read_sheet(wb['Read'], read_times)
+        self._verify_inference_sheet(wb['Inference'], inference_times, warm_up_times, batches)
 
         wb.close()
 
@@ -156,14 +165,14 @@ class TestPerformanceReport:
         return None
 
     def _verify_read_sheet(self, sheet, read_times):
-        assert isinstance(read_times[-1], dict), "Last element of read_times is not a dictionary"
-        assert "Minimum" in read_times[-1], "Last element of read_times is missing 'Minimum'"
-        assert "Maximum" in read_times[-1], "Last element of read_times is missing 'Maximum'"
-        assert "Average" in read_times[-1], "Last element of read_times is missing 'Average'"
+        assert isinstance(read_times[-1], dict), 'Last element of read_times is not a dictionary'
+        assert 'Minimum' in read_times[-1], "Last element of read_times is missing 'Minimum'"
+        assert 'Maximum' in read_times[-1], "Last element of read_times is missing 'Maximum'"
+        assert 'Average' in read_times[-1], "Last element of read_times is missing 'Average'"
         # performance_report stores read_times[:-1]
         expected = read_times[:-1]
 
-        run_row = self._find_row(sheet, "Run", "Time (s)")
+        run_row = self._find_row(sheet, 'Run', 'Time (s)')
         assert run_row is not None, "Read sheet: missing 'Run / Time (s)' header"
         stat_rows = {
             'Average': '=AVERAGE({col}{row_s}:{col}{row_e})',
@@ -177,38 +186,37 @@ class TestPerformanceReport:
 
         actual = []
         data_rows = run_row + 1
-        for row in sheet.iter_rows(
-            min_row=run_row + 1, min_col=2, max_col=2, values_only=True
-        ):
+        for row in sheet.iter_rows(min_row=run_row + 1, min_col=2, max_col=2, values_only=True):
             if row[0] is not None:
                 data_rows += 1
                 actual.append(row[0])
 
-        assert len(actual) == len(expected), \
-            f"Read data rows: expected {len(expected)}, got {len(actual)}"
+        assert len(actual) == len(expected), f'Read data rows: expected {len(expected)}, got {len(actual)}'
         for i, (a, e) in enumerate(zip(actual, expected)):
-            assert a == pytest.approx(e), \
-                f"Read row {i + 1}: expected {e}, got {a}"
+            assert a == pytest.approx(e), f'Read row {i + 1}: expected {e}, got {a}'
         for name in stat_rows.keys():
             row = self._find_row(sheet, name)
             assert row is not None, f"Inference sheet: missing '{name}' row"
             col = openpyxl.utils.get_column_letter(2)
             row_s = run_row + 1
-            row_e = data_rows - 1 # it points on row after last data row
+            row_e = data_rows - 1  # it points on row after last data row
             cell_value = sheet.cell(row=row, column=2).value
             expected_value = stat_rows[name].format(col=col, row_s=row_s, row_e=row_e)
-            assert str(cell_value) == str(expected_value), f"Read sheet: '{name}' row value is incorrect, expected {expected_value}, got {cell_value}"
+            assert str(cell_value) == str(expected_value), (
+                f"Read sheet: '{name}' row value is incorrect, expected {expected_value}, got {cell_value}"
+            )
 
     def _verify_inference_sheet(self, sheet, inference_times, warm_up_times, batches):
-        wu_row = self._find_row(sheet, "Warm Up Time")
+        wu_row = self._find_row(sheet, 'Warm Up Time')
         assert wu_row is not None, "Inference sheet: missing 'Warm Up Time' row"
 
         for bi, batch in enumerate(batches):
             stored = sheet.cell(row=wu_row, column=2 + bi).value
-            assert stored == str(warm_up_times[batch]), \
+            assert stored == str(warm_up_times[batch]), (
                 f"Warm-up batch {batch}: expected '{warm_up_times[batch]}', got '{stored}'"
+            )
 
-        run_row = self._find_row(sheet, "Run")
+        run_row = self._find_row(sheet, 'Run')
         assert run_row is not None, "Inference sheet: missing 'Run' header"
         data_rows = {}
 
@@ -233,36 +241,35 @@ class TestPerformanceReport:
         }
 
         for bi, batch in enumerate(batches):
-            assert isinstance(inference_times[batch][-1], dict), "Last element of inference_times is not a dictionary"
-            assert "Minimum" in inference_times[batch][-1], "Last element of inference_times is missing 'Minimum'"
-            assert "Maximum" in inference_times[batch][-1], "Last element of inference_times is missing 'Maximum'"
-            assert "Average" in inference_times[batch][-1], "Last element of inference_times is missing 'Average'"
+            assert isinstance(inference_times[batch][-1], dict), 'Last element of inference_times is not a dictionary'
+            assert 'Minimum' in inference_times[batch][-1], "Last element of inference_times is missing 'Minimum'"
+            assert 'Maximum' in inference_times[batch][-1], "Last element of inference_times is missing 'Maximum'"
+            assert 'Average' in inference_times[batch][-1], "Last element of inference_times is missing 'Average'"
 
             table = inference_times[batch][:-1]
             expected = table
 
             data_rows[batch] = run_row + 1
             actual = []
-            for row in sheet.iter_rows(
-                min_row=run_row + 1, min_col=2 + bi, max_col=2 + bi,
-                values_only=True
-            ):
+            for row in sheet.iter_rows(min_row=run_row + 1, min_col=2 + bi, max_col=2 + bi, values_only=True):
                 if row[0] is not None:
                     actual.append(row[0])
                     data_rows[batch] += 1
 
-            assert len(actual) == len(expected), \
-                f"Inference batch {batch}: expected {len(expected)} rows, got {len(actual)}"
+            assert len(actual) == len(expected), (
+                f'Inference batch {batch}: expected {len(expected)} rows, got {len(actual)}'
+            )
             for i, (a, e) in enumerate(zip(actual, expected)):
-                assert a == pytest.approx(e), \
-                    f"Inference batch {batch} row {i + 1}: expected {e}, got {a}"
+                assert a == pytest.approx(e), f'Inference batch {batch} row {i + 1}: expected {e}, got {a}'
 
             for name in stat_rows.keys():
                 row = self._find_row(sheet, name)
                 assert row is not None, f"Inference sheet: missing '{name}' row"
                 col = openpyxl.utils.get_column_letter(2 + bi)
                 row_s = run_row + 1
-                row_e = data_rows[batch] - 1 # it points on row after last data row
+                row_e = data_rows[batch] - 1  # it points on row after last data row
                 cell_value = sheet.cell(row=row, column=2 + bi).value
                 expected_value = stat_rows[name].format(col=col, row_s=row_s, row_e=row_e, batch=batch)
-                assert str(cell_value) == str(expected_value), f"Inference sheet: '{name}' row value is incorrect for batch {batch}, expected {expected_value}, got {cell_value}"
+                assert str(cell_value) == str(expected_value), (
+                    f"Inference sheet: '{name}' row value is incorrect for batch {batch}, expected {expected_value}, got {cell_value}"
+                )
